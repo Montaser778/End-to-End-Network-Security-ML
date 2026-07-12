@@ -16,4 +16,8 @@ RUN apt-get update && apt-get install -y awscli && \
 COPY . .
 
 # أمر التشغيل (استبدل app.py بالملف الرئيسي لديك)
+<<<<<<< HEAD
 CMD ["python", "app.py"]
+=======
+CMD ["python", "app.py"]
+>>>>>>> 54a5bc358e9676b0d982436b43e483d4f47b6afd
