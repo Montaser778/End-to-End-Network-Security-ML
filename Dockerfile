@@ -1,8 +1,19 @@
-FROM python:3.8-slim
+# استخدام صورة بايثون حديثة ومستقرة
+FROM python:3.9-slim
+
+# ضبط مجلد العمل
 WORKDIR /app
-COPY . /app
 
-RUN apt update -y && apt install awscli -y
+# نسخ ملف المتطلبات أولاً لتسريع عملية البناء (Docker Layer Caching)
+COPY requirements.txt .
 
-RUN apt-get update && pip install -r requirements.txt
-CMD ["python3", "app.py"]
+# تثبيت المتطلبات وأدوات AWS
+RUN apt-get update && apt-get install -y awscli && \
+    pip install --no-cache-dir -r requirements.txt && \
+    rm -rf /var/lib/apt/lists/*
+
+# نسخ باقي الكود
+COPY . .
+
+# أمر التشغيل (استبدل app.py بالملف الرئيسي لديك)
+CMD ["python", "app.py"]
