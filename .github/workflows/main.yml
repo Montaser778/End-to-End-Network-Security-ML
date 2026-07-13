@@ -54,21 +54,21 @@ jobs:
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
- Continuous-Deployment:
+Continuous-Deployment:
     needs: build-and-push-ecr-image
     runs-on: self-hosted
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Pull and Run Container
+      # 1. Login using a direct Docker command with your credentials from GitHub Secrets
+      - name: Docker Login
         run: |
-          # 1. تسجيل دخول مباشر باستخدام Action رسمي لا يتطلب aws-cli
-          # 2. نقوم بتنفيذ الـ Pull والـ Run في نفس الخطوة لضمان بقاء الجلسة
-          docker login -u AWS -p $(aws ecr get-login-password --region us-east-1) 340752819655.dkr.ecr.us-east-1.amazonaws.com
-          
+          echo ${{ secrets.AWS_SECRET_ACCESS_KEY }} | docker login -u AWS --password-stdin 340752819655.dkr.ecr.us-east-1.amazonaws.com
+
+      # 2. Pull and Run container
+      - name: Pull and Run
+        run: |
           docker pull 340752819655.dkr.ecr.us-east-1.amazonaws.com/${{ secrets.ECR_REPOSITORY_NAME }}:v1
-          
           docker ps -q --filter "name=networksecurity" | ForEach-Object { docker stop $_; docker rm -fv $_ }
-          
-          docker run -d -p 8080:8080 --ipc="host" --name=networksecurity 340752819655.dkr.ecr.us-east-1.amazonaws.com/${{ secrets.ECR_REPOSITORY_NAME }}:v1
+          docker run -d -p 8080:8080 --ipc="host" --name=networksecurity -e 'AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}' -e 'AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}' -e 'AWS_REGION=${{ secrets.AWS_REGION }}' 340752819655.dkr.ecr.us-east-1.amazonaws.com/${{ secrets.ECR_REPOSITORY_NAME }}:v1
