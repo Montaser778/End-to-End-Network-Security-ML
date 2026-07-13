@@ -61,7 +61,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Login and Pull image
+      - name: Login to ECR
+        uses: docker/login-action@v2
+        with:
+          registry: 340752819655.dkr.ecr.us-east-1.amazonaws.com
+          username: AWS
+          password: ${{ secrets.AWS_SECRET_ACCESS_KEY }} # ملاحظة: سنستخدم طريقة بديلة إذا فشلت هذه
+
+      - name: Pull and Run
         run: |
-          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ECR_LOGIN_URI }}
-          docker pull ${{ secrets.AWS_ECR_LOGIN_URI }}/${{ secrets.ECR_REPOSITORY_NAME }}:v1
+          docker pull 340752819655.dkr.ecr.us-east-1.amazonaws.com/${{ secrets.ECR_REPOSITORY_NAME }}:v1
+          docker ps -q --filter "name=networksecurity" | ForEach-Object { docker stop $_; docker rm -fv $_ }
+          docker run -d -p 8080:8080 --ipc="host" --name=networksecurity ${{ secrets.AWS_ECR_LOGIN_URI }}/${{ secrets.ECR_REPOSITORY_NAME }}:v1
